@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gana con Enrique — Rifas</title>
+  <meta name="description" content="Rifa digital Gana con Enrique" />
+  <link rel="preload" href="styles.css" as="style">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
+  <!-- Texto superior izquierda -->
+  <div class="top-left-banner">Bienvenido a Gana con Enrique</div>
+
+  <!-- Encabezado -->
+  <header class="header">
+    <img class="logo" src="logo_url_integrado.png" alt="Logo Gana con Enrique" />
+    <h1 class="title">Gana con Enrique</h1>
+    <p class="subtitle">Compra tu número y participa en el sorteo</p>
+  </header>
+
+  <!-- Barra de info rápida -->
+  <section class="info-bar">
+    <div><strong>Precio:</strong> <span id="ui-price">S/ 0.00</span></div>
+    <div><strong>Total de números:</strong> <span id="ui-total">100</span></div>
+    <div class="payment-pill"><strong>Métodos de pago:</strong> Yape (QR EMV) · Transferencia BCP</div>
+  </section>
+
+  <!-- Área de pagos -->
+  <section class="pay-section card">
+    <div class="pay-left">
+      <h2 class="section-title">Pagar con Yape</h2>
+      <p>Escanea el QR EMV con Yape o usa el alias/código que se muestra.</p>
+
+      <!-- Preferencia: canvas (EMV). Respaldo: imagen fija -->
+      <canvas id="yape-qr" class="qr-canvas" width="240" height="240" role="img" aria-label="QR Yape"></canvas>
+      <img id="yape-qr-img" class="qr-canvas" alt="QR Yape" src="yape_qr.png" style="display:none" />
+
+      <div class="mono"><div><strong>EMV:</strong> <span id="emv-preview">—</span></div></div>
+    </div>
+
+    <div class="pay-right">
+      <h2 class="section-title">Transferencia BCP</h2>
+      <div class="mono">
+        <div><strong>Cuenta:</strong> <span id="bcp-cuenta">—</span></div>
+        <div><strong>CCI:</strong> <span id="bcp-cci">—</span></div>
+        <div><strong>Titular:</strong> <span id="bcp-titular">—</span></div>
+      </div>
+      <a id="whatsapp-share" class="whatsapp-btn" target="_blank" rel="noopener">Compartir por WhatsApp</a>
+      <p class="help">Al compartir, se abrirá WhatsApp con tu número +51 943698097.</p>
+    </div>
+  </section>
+
+  <!-- Selector de números -->
+  <section class="numbers card">
+    <div class="numbers-header">
+      <h2 class="section-title">Selecciona tu número</h2>
+      <div class="legend">
+        <span class="dot free"></span> Libre
+        <span class="dot reserved"></span> Separado
+        <span class="dot paid"></span> Pagado
+      </div>
+    </div>
+    <div id="numbers-grid" class="grid"></div>
+  </section>
+
+  <!-- Tabla de asignaciones -->
+  <section class="assignments card">
+    <div class="assignments-header">
+      <h2 class="section-title">Asignaciones</h2>
+      <div class="admin-only hidden">
+        <button id="btn-export-csv" class="btn small">Exportar CSV</button>
+        <button id="btn-export-json" class="btn small">Exportar JSON</button>
+        <label class="file-label">
+          <input type="file" id="import-file" accept=".json" />
+          Importar JSON
+        </label>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Estado</th>
+            <th>Nombre</th>
+            <th>Referencia de pago</th>
+            <th class="admin-only hidden">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="assignments-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Pie de página -->
+  <footer class="footer">
+    <div class="legal">
+      <p>Este sitio es una plataforma informativa para la venta de rifas. Verifica siempre las condiciones del sorteo.</p>
+      <p><em>Subtítulos realizados por la comunidad de Amara.org</em></p>
+    </div>
+  </footer>
+
+  <!-- Botón flotante Admin (visible para todos, requiere contraseña) -->
+  <button id="admin-fab" class="fab" aria-label="Administración" title="Administración">⚙️</button>
+
+  <!-- Modal: Login Admin -->
+  <dialog id="login-modal" class="modal">
+    <form method="dialog" class="modal-card" id="login-form">
+      <h3>Acceso administrador</h3>
+      <p>Ingresa la contraseña para editar configuración y exportar datos.</p>
+      <input type="password" id="admin-pass" placeholder="Contraseña" required />
+      <div class="modal-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="login-submit" value="default">Entrar</button>
+      </div>
+      <p class="hint">Contraseña predeterminada: <strong>21484988</strong></p>
+    </form>
+  </dialog>
+
+  <!-- Modal: Panel Admin -->
+  <dialog id="admin-modal" class="modal">
+    <form method="dialog" class="modal-card admin-form" id="admin-form">
+      <h3>Panel de administración</h3>
+
+      <fieldset>
+        <legend>General</legend>
+        <label>Título <input type="text" id="cfg-title" value="Gana con Enrique" /></label>
+        <label>Subtítulo <input type="text" id="cfg-subtitle" value="Compra tu número y participa en el sorteo" /></label>
+        <label>Precio (S/)<input type="number" id="cfg-price" min="0" step="0.01" value="0" /></label>
+        <label>Total de números <input type="number" id="cfg-total" min="1" max="10000" value="100" /></label>
+        <label>Números por fila <input type="number" id="cfg-per-row" min="2" max="20" value="10" /></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pago Yape (EMV)</legend>
+        <label>Cadena EMV para QR
+          <textarea id="cfg-emv" rows="3" placeholder="Ingresa tu payload EMV de Yape"></textarea>
+        </label>
+        <small>El QR se genera automáticamente al guardar. Si está vacío, se mostrará la imagen de respaldo.</small>
+      </fieldset>
+
+      <fieldset>
+        <legend>Transferencia BCP</legend>
+        <label>Titular <input type="text" id="cfg-bcp-titular" placeholder="Nombre del titular" /></label>
+        <label>Cuenta <input type="text" id="cfg-bcp-cuenta" placeholder="XXX-XXXXXXXXXX-XX" /></label>
+        <label>CCI <input type="text" id="cfg-bcp-cci" placeholder="XXX-XXXXXXXXXXXXXXX-XX" /></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>WhatsApp</legend>
+        <label>Número (incluye +51) <input type="tel" id="cfg-wa" value="+51 943698097" /></label>
+        <label>Mensaje por defecto
+          <input type="text" id="cfg-wa-text" value="Hola, deseo participar en la rifa Gana con Enrique." />
+        </label>
+      </fieldset>
+
+      <div class="modal-actions">
+        <button class="btn" value="cancel">Cerrar</button>
+        <button class="btn" id="btn-logout" value="close">Salir de Admin</button>
+        <button class="btn primary" id="btn-save" value="default">Guardar cambios</button>
+      </div>
+
+      <div class="admin-only-row">
+        <button id="btn-clear" class="btn danger" type="button">Reiniciar todo (local)</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="qrmini.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
